@@ -41,7 +41,6 @@ var EventList = BaseView.extend({
             this.$el.prepend(itemView.render().el);
             itemView.$el.slideDown('fast');
         } else {
-            console.log('appending event');
             this.$el.append(itemView.render().el);
         }
     },

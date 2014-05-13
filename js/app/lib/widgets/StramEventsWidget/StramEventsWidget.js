@@ -41,6 +41,12 @@ var StramEventRange = Backbone.Model.extend({
         if (!_.isEmpty(errors)) {
             return errors;
         }
+    },
+    toOptions: function() {
+        var json = this.toJSON();
+        json.from = json.from.valueOf();
+        json.to = json.to.valueOf();
+        return json;
     }
 });
 var StramEventsWidget = BaseView.extend({
@@ -78,6 +84,7 @@ var StramEventsWidget = BaseView.extend({
         // TODO: load from state
         this.viewMode = 'range';
         this.showRaw = false;
+        this.setInterceptFunction();
 
         // Clean up datepickers
         this.on('clean_up', this.removeDateTimePickers);
@@ -88,7 +95,8 @@ var StramEventsWidget = BaseView.extend({
         var json = {
             viewMode: this.viewMode,
             showRaw: this.showRaw,
-            widgetId: this.compId().replace('.','-')
+            widgetId: this.compId().replace('.','-'),
+            range: this.rangeParams.toJSON()
         };
         var html = this.template(json);
         return html;
@@ -131,7 +139,7 @@ var StramEventsWidget = BaseView.extend({
         'change [name="viewMode"]': 'onViewModeChange',
         'change .show-raw-event-data': 'onShowRawChange',
         'submit .stram-event-options': 'onRangeSubmit',
-        'blur .form_datetime': 'updateDateFields'
+        'blur .form_datetime input': 'updateDateFields'
     },
 
     onViewModeChange: function(evt) {
@@ -140,6 +148,7 @@ var StramEventsWidget = BaseView.extend({
             this.cache[this.viewMode] = this.collection.toJSON();
             this.collection.reset(this.cache[newMode]);
             this.viewMode = newMode;
+            this.setInterceptFunction();
             this.renderContent();
             if (newMode === 'range') {
                 this.setupDateTimePickers();
@@ -172,14 +181,14 @@ var StramEventsWidget = BaseView.extend({
         }
 
         this.rangeParams.set({
-            from: from.valueOf(),
-            to: to.valueOf(),
+            from: from,
+            to: to,
             limit: 100,
             offset: 0
         });
         this.collection.reset([]);
         var promise = this.collection.fetch({
-            data: this.rangeParams.toJSON()
+            data: this.rangeParams.toOptions()
         });
         var self = this;
         promise.always(function() {
@@ -189,9 +198,37 @@ var StramEventsWidget = BaseView.extend({
     },
 
     updateDateFields: function() {
-        var $dates = this.$('.form_datetime');
+        var $dates, fromInput, fromVal, from, fromTarget, toInput, toVal, to, toTarget;
+        $dates = this.$('.form_datetime');
         if ($dates.length) {
-            $dates.datetimepicker('update');
+
+            fromInput = this.$('[name="range-from"]');
+            fromVal = fromInput.val();
+            from = new Date(fromVal);
+            if (from.toString() !== 'Invalid Date') {
+                fromTarget = fromInput.parent();
+                fromTarget.datetimepicker('update', from);    
+            }
+
+            toInput = this.$('[name="range-to"]');
+            toVal = toInput.val();
+            to = new Date(toVal);
+            if (to.toString() !== 'Invalid Date') {
+                toTarget = toInput.parent();
+                toTarget.datetimepicker('update', to);
+            }
+
+        }
+    },
+
+    setInterceptFunction: function() {
+        if (this.viewMode === 'range') {
+            var self = this;
+            this.collection.interceptEvent = function(evt) {
+                self.cache.tail.unshift(evt);
+            }
+        } else {
+            this.collection.interceptEvent = StramEventCollection.prototype.interceptEvent;
         }
     },
     

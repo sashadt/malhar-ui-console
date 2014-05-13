@@ -15,16 +15,22 @@
             <!-- From -->
             <div class="control-group">
                 <div class="controls input-append date form_datetime" data-link-field="<%= widgetId %>-range-from">
-                    <input size="16" type="text" value="">
+                    <input 
+                        size="16" 
+                        name="range-from"
+                        id="<%= widgetId %>-range-from"
+                        placeholder="from"
+                        type="text" 
+                        value="<%= range.from.toLocaleString() %>">
                     <span class="add-on"><i class="icon-remove"></i></span>
                     <span class="add-on"><i class="icon-th"></i></span>
                 </div>
-                <input
+<!--                 <input
                     type="hidden"
                     name="range-from"
                     id="<%= widgetId %>-range-from"
                     placeholder="from"
-                    class="input-medium"> 
+                    class="input-medium">  -->
             </div>
             
             to
@@ -32,16 +38,22 @@
             <!-- To -->
             <div class="control-group">
                 <div class="controls input-append date form_datetime" data-link-field="<%= widgetId %>-range-to">
-                    <input size="16" type="text" value="">
+                    <input 
+                        size="16" 
+                        type="text" 
+                        name="range-to"
+                        id="<%= widgetId %>-range-to"
+                        placeholder="to"
+                        value="<%= range.to.toLocaleString() %>">
                     <span class="add-on"><i class="icon-remove"></i></span>
                     <span class="add-on"><i class="icon-th"></i></span>
                 </div>
-                <input
+<!--                 <input
                     type="hidden"
                     name="range-to"
                     id="<%= widgetId %>-range-to"
                     placeholder="to"
-                    class="input-medium">
+                    class="input-medium"> -->
             </div>
 
             <input type="submit" class="btn btn-primary" value="find">
