@@ -82,7 +82,7 @@ var StramEventsWidget = BaseView.extend({
         }
         
         // TODO: load from state
-        this.viewMode = 'range';
+        this.viewMode = 'tail';
         this.showRaw = false;
         this.setInterceptFunction();
 
