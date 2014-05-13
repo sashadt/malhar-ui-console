@@ -49,7 +49,7 @@ var StramEventsWidget = BaseView.extend({
         
         BaseView.prototype.initialize.call(this, options);
 
-        var rangeParams = new StramEventRange({
+        this.rangeParams = new StramEventRange({
             from: '',
             to: ''
         });
@@ -68,6 +68,12 @@ var StramEventsWidget = BaseView.extend({
         this.subview('viewer', new EventViewer({
             collection: this.collection
         }));
+
+        // Cached events per mode
+        this.cache = {
+            tail: [],
+            range: []
+        }
         
         // TODO: load from state
         this.viewMode = 'range';
@@ -82,7 +88,7 @@ var StramEventsWidget = BaseView.extend({
         var json = {
             viewMode: this.viewMode,
             showRaw: this.showRaw,
-            widgetId: this.compId()
+            widgetId: this.compId().replace('.','-')
         };
         var html = this.template(json);
         return html;
@@ -103,11 +109,9 @@ var StramEventsWidget = BaseView.extend({
                 startView: 2,
                 forceParse: 0,
                 minuteStep: 1,
-                showMeridian: 1,
-                initialDate: new Date()
+                showMeridian: 1
             });
         }
-        
     },
 
     removeDateTimePickers: function() {
@@ -126,16 +130,17 @@ var StramEventsWidget = BaseView.extend({
     events: {
         'change [name="viewMode"]': 'onViewModeChange',
         'change .show-raw-event-data': 'onShowRawChange',
-        'submit .stram-event-options': 'onRangeSubmit'
+        'submit .stram-event-options': 'onRangeSubmit',
+        'blur .form_datetime': 'updateDateFields'
     },
 
     onViewModeChange: function(evt) {
         var newMode = this.$('form [name="viewMode"]:checked').val();
         if (newMode !== this.viewMode) {
+            this.cache[this.viewMode] = this.collection.toJSON();
+            this.collection.reset(this.cache[newMode]);
             this.viewMode = newMode;
             this.renderContent();
-            this.removeDateTimePickers();
-            
             if (newMode === 'range') {
                 this.setupDateTimePickers();
             }
@@ -151,17 +156,43 @@ var StramEventsWidget = BaseView.extend({
 
     onRangeSubmit: function(evt) {
         evt.preventDefault();
-        var from, to;
+        var fromVal, toVal, from, to;
 
-        from = new Date(this.$('[name="range-from"]').val());
-        to = new Date(this.$('[name="range-to"]').val());
+        fromVal = this.$('[name="range-from"]').val();
+        from = new Date(fromVal);
+        toVal = this.$('[name="range-to"]').val();
+        to = new Date(toVal);
 
         if (from.toString() === 'Invalid Date') {
-            console.log('from date is invalid: ', this.$('[name="range-from"]').val());
+            console.log('from date is invalid: ', fromVal);
+            return;
         } else if (to.toString() === 'Invalid Date') {
-            console.log('to date is invalid');
+            console.log('to date is invalid: ', toVal);
+            return;
         }
 
+        this.rangeParams.set({
+            from: from.valueOf(),
+            to: to.valueOf(),
+            limit: 100,
+            offset: 0
+        });
+        this.collection.reset([]);
+        var promise = this.collection.fetch({
+            data: this.rangeParams.toJSON()
+        });
+        var self = this;
+        promise.always(function() {
+            self.subview('list').removeLoading();
+        });
+        this.subview('list').showLoading();
+    },
+
+    updateDateFields: function() {
+        var $dates = this.$('.form_datetime');
+        if ($dates.length) {
+            $dates.datetimepicker('update');
+        }
     },
     
     template: kt.make(__dirname+'/StramEventsWidget.html','_')

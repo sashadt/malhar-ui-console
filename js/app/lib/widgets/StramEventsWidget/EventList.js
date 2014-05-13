@@ -41,7 +41,8 @@ var EventList = BaseView.extend({
             this.$el.prepend(itemView.render().el);
             itemView.$el.slideDown('fast');
         } else {
-            this.$el.prepend(itemView.render().el);
+            console.log('appending event');
+            this.$el.append(itemView.render().el);
         }
     },
 
@@ -86,6 +87,14 @@ var EventList = BaseView.extend({
                 this.collection.at(i).set('selected', !!selected);
             }, this);
         }
+    },
+
+    showLoading: function() {
+        this.$el.html('<span class="events-loading-msg">loading...</span>');
+    },
+
+    removeLoading: function() {
+        this.$('.events-loading-msg').remove();
     }
 
 });
